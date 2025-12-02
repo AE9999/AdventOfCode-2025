@@ -40,7 +40,7 @@ fn solve(input: &Vec<String>) {
 fn solve2(input: &Vec<String>) {
     let min = 0;
     let max = 99;
-    
+
     let mut password = 0;
     let mut dial = 50;
     for line in input {
