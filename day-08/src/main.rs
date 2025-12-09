@@ -17,7 +17,6 @@ fn main() -> io::Result<()> {
 
     solve(&points, amount);
 
-
     Ok(())
 }
 

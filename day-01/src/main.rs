@@ -84,4 +84,3 @@ fn read_input(filename: &String) -> io::Result<Vec<String>> {
     let file_in = File::open(filename)?;
     Ok(BufReader::new(file_in).lines().map(|x| x.unwrap()).collect())
 }
-
