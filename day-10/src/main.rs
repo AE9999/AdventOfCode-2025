@@ -71,7 +71,7 @@ fn solve2(machines: &Vec<Machine>) {
             }
 
             let mut best: Option<usize> = None;
-            do_solve2(machine, state, &mut state_to_min, presses, &mut best).unwrap()
+            do_solve2(machine, state, &mut state_to_min, presses, &mut best, 0).unwrap()
         })
         .sum();                        // parallel sum
     bar.finish_with_message("done");
@@ -80,52 +80,70 @@ fn solve2(machines: &Vec<Machine>) {
 }
 
 
-fn do_solve2(machine: &Machine,
-             state: Vec<i64>,
-             state_to_min: &mut HashMap<Vec<i64>, usize>,
-             presses: usize,
-             best: &mut Option<usize>,) -> Option<usize> {
+fn do_solve2(
+    machine: &Machine,
+    state: Vec<i64>,
+    state_to_min: &mut HashMap<Vec<i64>, usize>,
+    presses: usize,
+    best: &mut Option<usize>,
+    min_index: usize,
+) -> Option<usize> {
+    // 1. Global upper bound: prune branches that can't beat current best
+    if let Some(best_so_far) = *best {
+        if presses >= best_so_far {
+            return None;
+        }
+    }
 
+    // 2. Per-state pruning: we've been here cheaper or equal before
     if let Some(&known) = state_to_min.get(&state) {
         if presses >= known {
             return None;
         }
     }
 
+    // 3. Goal check: reached target joltage
     if state == machine.joltage {
-        *best = Some(presses);
-        return Some(presses)
+        match best {
+            Some(b) if presses < *b => *b = presses,
+            None => *best = Some(presses),
+            _ => {}
+        }
+        return Some(presses);
     }
 
-    let known_optimum = state_to_min.get(&state);
-    if known_optimum.is_some() && known_optimum.unwrap() < &presses {
-        return None
-    }
+    // record best known cost for this state
     state_to_min.insert(state.clone(), presses);
 
+    // 4. Generate successors, only using buttons with index >= min_index
     let mut options: Vec<((usize, Vec<i64>), i64)> =
-        (0..machine.button_2_switches.len())
+        (min_index..machine.button_2_switches.len())
             .filter_map(|index_to_press| {
                 let mut next_state = state.clone();
                 for &to_increase in &machine.button_2_switches[index_to_press] {
                     next_state[to_increase] += 1;
                 }
 
-                // target_distance: &[i64], &[i64] -> Option<i64>
-                let x= target_distance(&next_state, &machine.joltage)
-                    .map(|dist| ((index_to_press, next_state), dist));
-                // println!("{x:?}");
-                x
-            }
-            )
+                target_distance(&next_state, &machine.joltage)
+                    .map(|dist| ((index_to_press, next_state), dist))
+            })
             .collect();
 
+    // 5. Best-first by heuristic distance
     options.sort_by_key(|&(_, dist)| dist);
 
+    // 6. Recurse; enforce non-decreasing indices via `min_index`
     options
         .into_iter()
-        .filter_map(|((_, next_state), _)| {
-            do_solve2(machine, next_state, state_to_min, presses + 1, best)
+        .filter_map(|((index_to_press, next_state), _)| {
+            do_solve2(
+                machine,
+                next_state,
+                state_to_min,
+                presses + 1,
+                best,
+                index_to_press, // allow same or larger indices
+            )
         })
         .min()
 }
