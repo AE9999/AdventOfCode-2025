@@ -71,7 +71,8 @@ fn solve2(machines: &Vec<Machine>) {
             }
 
             let mut best: Option<usize> = None;
-            do_solve2(machine, state, &mut state_to_min, presses, &mut best, 0).unwrap()
+            // &mut state_to_min,
+            do_solve2(machine, state,  presses, &mut best, 0).unwrap()
         })
         .sum();                        // parallel sum
     bar.finish_with_message("done");
@@ -83,7 +84,7 @@ fn solve2(machines: &Vec<Machine>) {
 fn do_solve2(
     machine: &Machine,
     state: Vec<i64>,
-    state_to_min: &mut HashMap<Vec<i64>, usize>,
+    // state_to_min: &mut HashMap<Vec<i64>, usize>,
     presses: usize,
     best: &mut Option<usize>,
     min_index: usize,
@@ -96,11 +97,11 @@ fn do_solve2(
     }
 
     // 2. Per-state pruning: we've been here cheaper or equal before
-    if let Some(&known) = state_to_min.get(&state) {
-        if presses >= known {
-            return None;
-        }
-    }
+    // if let Some(&known) = state_to_min.get(&state) {
+    //     if presses >= known {
+    //         return None;
+    //     }
+    // }
 
     // 3. Goal check: reached target joltage
     if state == machine.joltage {
@@ -113,7 +114,7 @@ fn do_solve2(
     }
 
     // record best known cost for this state
-    state_to_min.insert(state.clone(), presses);
+    // state_to_min.insert(state.clone(), presses);
 
     // 4. Generate successors, only using buttons with index >= min_index
     let mut options: Vec<((usize, Vec<i64>), i64)> =
@@ -139,7 +140,7 @@ fn do_solve2(
             do_solve2(
                 machine,
                 next_state,
-                state_to_min,
+                // state_to_min,
                 presses + 1,
                 best,
                 index_to_press, // allow same or larger indices
@@ -172,7 +173,7 @@ fn do_solve1(machine: &Machine,
     if known_optimum.is_some() && known_optimum.unwrap() < &presses {
         return None
     }
-    state_to_min.insert(state.clone(), presses);
+    // state_to_min.insert(state.clone(), presses);
 
 
     let mut options: Vec<((usize, Vec<bool>), usize)> = (0..machine.button_2_switches.len()).map( |index_to_press| {
