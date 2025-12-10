@@ -70,7 +70,8 @@ fn solve2(machines: &Vec<Machine>) {
                 }
             }
 
-            do_solve2(machine, state, &mut state_to_min, presses).unwrap()
+            let mut best: Option<usize> = None;
+            do_solve2(machine, state, &mut state_to_min, presses, &mut best).unwrap()
         })
         .sum();                        // parallel sum
     bar.finish_with_message("done");
@@ -82,9 +83,17 @@ fn solve2(machines: &Vec<Machine>) {
 fn do_solve2(machine: &Machine,
              state: Vec<i64>,
              state_to_min: &mut HashMap<Vec<i64>, usize>,
-             presses: usize) -> Option<usize> {
+             presses: usize,
+             best: &mut Option<usize>,) -> Option<usize> {
+
+    if let Some(&known) = state_to_min.get(&state) {
+        if presses >= known {
+            return None;
+        }
+    }
 
     if state == machine.joltage {
+        *best = Some(presses);
         return Some(presses)
     }
 
@@ -116,7 +125,7 @@ fn do_solve2(machine: &Machine,
     options
         .into_iter()
         .filter_map(|((_, next_state), _)| {
-            do_solve2(machine, next_state, state_to_min, presses + 1)
+            do_solve2(machine, next_state, state_to_min, presses + 1, best)
         })
         .min()
 }
